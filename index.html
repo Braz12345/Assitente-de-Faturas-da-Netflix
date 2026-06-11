@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Assistente Netflix</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finanças Stream">
+
+    <style>
+        :root {
+            --bg-color: #141414;
+            --card-bg: #181818;
+            --netflix-red: #E50914;
+            --text-color: #FFFFFF;
+            --text-muted: #808080;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            margin-top: 40px;
+        }
+
+        h2 {
+            color: var(--netflix-red);
+            text-align: center;
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            background-color: #333;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        select:focus, input:focus {
+            outline: 2px solid var(--netflix-red);
+        }
+
+        .result-box {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            border-left: 4px solid var(--netflix-red);
+        }
+
+        .price-highlight {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFF;
+            margin: 10px 0;
+        }
+
+        .days-left {
+            font-size: 14px;
+            color: #46d369;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h2>Assistente de Fatura</h2>
+    
+    <div class="form-group">
+        <label for="plano">Selecione seu Plano</label>
+        <select id="plano" onchange="atualizarPainel()">
+            <option value="anuncios">Padrão com anúncios (R$ 20,90)</option>
+            <option value="padrao" selected>Padrão (R$ 44,90)</option>
+            <option value="premium">Premium (R$ 59,90)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="divisao">Dividir com quantas pessoas?</label>
+        <input type="number" id="divisao" value="1" min="1" max="10" oninput="atualizarPainel()">
+    </div>
+
+    <div class="form-group">
+        <label for="vencimento">Dia do Vencimento Mensal</label>
+        <input type="number" id="vencimento" value="10" min="1" max="31" oninput="atualizarPainel()">
+    </div>
+
+    <div class="result-box">
+        <div id="label-divisao" style="font-size: 14px; color: var(--text-muted);">Valor integral da fatura:</div>
+        <div class="price-highlight" id="valor-final">R$ 44,90</div>
+        <div class="days-left" id="contador-dias">Calculando dias restantes...</div>
+    </div>
+</div>
+
+<script>
+    // Valores de referência dos planos
+    const valoresPlanos = {
+        anuncios: 20.90,
+        padrao: 44.90,
+        premium: 59.90
+    };
+
+    function atualizarPainel() {
+        const planoSelecionado = document.getElementById('plano').value;
+        const pessoas = parseInt(document.getElementById('divisao').value) || 1;
+        const diaVencimento = parseInt(document.getElementById('vencimento').value) || 10;
+
+        // 1. Cálculo da divisão
+        const valorTotal = valoresPlanos[planoSelecionado];
+        const valorPorPessoa = valorTotal / pessoas;
+
+        // Atualiza a interface com os valores calculados
+        document.getElementById('valor-final').innerText = `R$ ${valorPorPessoa.toFixed(2).replace('.', ',')}`;
+        
+        if (pessoas > 1) {
+            document.getElementById('label-divisao').innerText = `Sua parte (Total: R$ ${valorTotal.toFixed(2).replace('.', ',')} por ${pessoas} pessoas):`;
+        } else {
+            document.getElementById('label-divisao').innerText = `Valor integral da fatura:`;
+        }
+
+        // 2. Cálculo dos dias restantes para o vencimento
+        const hoje = new Date();
+        let dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento);
+        
+        // Se a data de vencimento deste mês já passou, joga para o próximo mês
+        if (hoje > dataVencimento) {
+            dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth() + 1, diaVencimento);
+        }
+        
+        const diferencaTempo = dataVencimento - hoje;
+        const diferencaDias = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+
+        const elementoDias = document.getElementById('contador-dias');
+        
+        if (diferencaDias === 0 || diferencaDias === 31) {
+            elementoDias.innerText = "Sua fatura vence hoje!";
+            elementoDias.style.color = "#E50914"; // Vermelho Netflix para urgência
+        } else {
+            elementoDias.innerText = `Faltam ${diferencaDias} dias para o próximo vencimento.`;
+            elementoDias.style.color = "#46d369"; // Verde para dias tranquilos
+        }
+    }
+
+    // Garante que o painel seja calculado assim que o HTML terminar de carregar
+    window.addEventListener('DOMContentLoaded', atualizarPainel);
+</script>
+
+</body>
+</html>
